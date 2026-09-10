@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#050507">
+<title>Presente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div id="app">
+
+    <!-- DASHBOARD -->
+    <section id="screen-dashboard" class="screen active">
+      <div class="dashboard">
+        <div class="wordmark">presente</div>
+        <button id="btn-start-task" class="btn-giant">+ Inizia task</button>
+        <button id="btn-archive" class="btn-secondary">Archivio</button>
+      </div>
+    </section>
+
+    <!-- QUICK START OVERLAY -->
+    <div id="overlay-quickstart" class="overlay hidden">
+      <form id="form-quickstart" class="quickstart-box">
+        <label for="input-task-title">Cosa stai per fare?</label>
+        <input id="input-task-title" type="text" autocomplete="off" placeholder="Es. Scrivere il report" />
+        <div class="quickstart-actions">
+          <button type="button" id="btn-cancel-quickstart" class="btn-text">Annulla</button>
+          <button type="submit" class="btn-accent">Vai</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- TASK MODE: RUNNING -->
+    <section id="screen-running" class="screen">
+      <div class="task-header">
+        <div class="task-title" id="running-task-title"></div>
+      </div>
+      <div class="timer-wrap">
+        <svg class="timer-ring" viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="90"></circle>
+          <circle class="ring-progress" id="ring-progress" cx="100" cy="100" r="90"></circle>
+        </svg>
+        <div class="timer-digital" id="timer-digital">15:00</div>
+      </div>
+      <div class="block-counter" id="block-counter">Blocco 1</div>
+    </section>
+
+    <!-- CHECK-IN -->
+    <section id="screen-checkin" class="screen">
+      <div class="checkin-box">
+        <h2>Check-in</h2>
+        <p class="checkin-question">Cosa hai fatto in questi 15 min? Perché? Come?</p>
+        <textarea id="checkin-note" rows="6" placeholder="Scrivi qui..."></textarea>
+        <div class="checkin-actions">
+          <button id="btn-avanti" class="btn-primary">Avanti</button>
+          <button id="btn-obiettivo" class="btn-success">Obiettivo raggiunto</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLOSING -->
+    <section id="screen-closing" class="screen">
+      <div class="checkin-box">
+        <h2>Chiusura Task</h2>
+        <p class="checkin-question">Note finali / Sanity check (stretching, acqua, sensazioni)</p>
+        <textarea id="closing-note" rows="6" placeholder="Scrivi qui..."></textarea>
+        <div class="checkin-actions single">
+          <button id="btn-confirm-archive" class="btn-success">Conferma e archivia</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHIVE -->
+    <section id="screen-archive" class="screen">
+      <div class="archive-header">
+        <button id="btn-back-dashboard" class="btn-back">&larr; Indietro</button>
+        <h2>Archivio</h2>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-hours">0h 0m</div>
+          <div class="stat-label">Ore oggi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-tasks">0</div>
+          <div class="stat-label">Task completati</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-blocks">0</div>
+          <div class="stat-label">Blocchi da 15'</div>
+        </div>
+      </div>
+      <div class="task-list" id="task-list"></div>
+    </section>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

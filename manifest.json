@@ -1,0 +1,14 @@
+{
+  "name": "Presente",
+  "short_name": "Presente",
+  "description": "Un blocco alla volta. Traccia i tuoi task in intervalli da 15 minuti, con check-in automatico e archivio.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
