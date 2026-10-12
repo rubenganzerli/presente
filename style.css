@@ -328,3 +328,4 @@ html, body {
 .sync-status { color: var(--text-dim); font-size: 11px; letter-spacing: 0.04em; text-align: center; padding: 0 0 12px; min-height: 1em; }
 .day-header { color: var(--gold-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 2px 2px; }
 .day-header:first-child { padding-top: 0; }
+.btn-export { margin-left: auto; }

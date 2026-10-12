@@ -334,6 +334,18 @@ function renderArchive() {
   });
 }
 
+// A copy the user holds, outside the browser and outside the account.
+function exportArchive() {
+  const data = JSON.stringify({ exportedAt: new Date().toISOString(), tasks: readStored().tasks }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'presente-archivio-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 /* ---------- Wiring ---------- */
 
 function wireEvents() {
@@ -360,6 +372,8 @@ function wireEvents() {
     showScreen('archive');
     syncArchive();
   });
+
+  document.getElementById('btn-export').addEventListener('click', exportArchive);
 
   document.getElementById('btn-back-dashboard').addEventListener('click', () => {
     showScreen('dashboard');
