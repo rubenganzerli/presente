@@ -323,3 +323,8 @@ html, body {
 .final-note strong { color: var(--text); }
 
 .empty-state { text-align: center; color: var(--text-dim); padding: 40px 20px; font-family: var(--serif); font-style: italic; font-size: 18px; }
+
+/* Archive memory */
+.sync-status { color: var(--text-dim); font-size: 11px; letter-spacing: 0.04em; text-align: center; padding: 0 0 12px; min-height: 1em; }
+.day-header { color: var(--gold-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 2px 2px; }
+.day-header:first-child { padding-top: 0; }

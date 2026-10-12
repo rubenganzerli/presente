@@ -5,16 +5,83 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 90;
 let state = loadState();
 let timerInterval = null;
 
-function loadState() {
+function readStored() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const d = JSON.parse(raw);
+      return { tasks: Array.isArray(d.tasks) ? d.tasks : [], activeTask: d.activeTask || null };
+    }
   } catch (e) {}
   return { tasks: [], activeTask: null };
 }
 
+function loadState() {
+  return readStored();
+}
+
+// Finished tasks are a set keyed by id: merging never drops one, whoever wrote last.
+function mergeTasks(a, b) {
+  const stamp = (t) => t.updatedAt || t.endedAt || 0;
+  const byId = new Map();
+  [...a, ...b].forEach((t) => {
+    const cur = byId.get(t.id);
+    if (!cur || stamp(t) > stamp(cur)) byId.set(t.id, t);
+  });
+  return [...byId.values()].sort((x, y) => y.endedAt - x.endedAt);
+}
+
+// Another window (or the installed app) may have archived tasks since this one loaded:
+// merge with what is stored instead of overwriting it with this window's copy.
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  state.tasks = mergeTasks(readStored().tasks, state.tasks);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    setSyncStatus('Memoria del dispositivo piena: archivio salvato solo sul server.');
+  }
+}
+
+/* ---------- Server archive ---------- */
+
+let syncing = null;
+
+function setSyncStatus(text) {
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = text;
+}
+
+function syncArchive() {
+  if (syncing) return syncing;
+  syncing = fetch('__api/archive', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tasks: readStored().tasks }),
+  })
+    .then((r) => {
+      if (r.status === 401) throw new Error('auth');
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    })
+    .then((body) => {
+      state.activeTask = readStored().activeTask;
+      state.tasks = body.tasks;
+      saveState();
+      setSyncStatus('Archivio salvato sul tuo account · ' + formatTime(Date.now()));
+      if (screens.archive.classList.contains('active')) renderArchive();
+    })
+    .catch((e) => {
+      setSyncStatus(e.message === 'auth'
+        ? 'Sessione scaduta: ricarica e accedi per salvare sul tuo account.'
+        : 'Offline: archivio salvato sul dispositivo, si sincronizza appena torni online.');
+    })
+    .finally(() => { syncing = null; });
+  return syncing;
+}
+
+function requestPersistentStorage() {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 }
 
 const screens = {
@@ -40,6 +107,11 @@ function escapeHtml(str) {
 function formatTime(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDay(ts) {
+  if (isToday(ts)) return 'Oggi';
+  return new Date(ts).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function isToday(ts) {
@@ -185,6 +257,7 @@ function handleConfirmArchive() {
   state.activeTask = null;
   saveState();
   showScreen('dashboard');
+  syncArchive();
 }
 
 /* ---------- Archive ---------- */
@@ -216,7 +289,16 @@ function renderArchive() {
     return;
   }
 
+  let lastDay = '';
   state.tasks.forEach(t => {
+    const day = formatDay(t.endedAt);
+    if (day !== lastDay) {
+      lastDay = day;
+      const h = document.createElement('div');
+      h.className = 'day-header';
+      h.textContent = day;
+      listEl.appendChild(h);
+    }
     const durationMs = t.endedAt - t.startedAt;
     const durMins = Math.round(durationMs / 60000);
 
@@ -273,8 +355,10 @@ function wireEvents() {
   });
 
   document.getElementById('btn-archive').addEventListener('click', () => {
+    state = loadState();
     renderArchive();
     showScreen('archive');
+    syncArchive();
   });
 
   document.getElementById('btn-back-dashboard').addEventListener('click', () => {
@@ -286,10 +370,34 @@ function wireEvents() {
   document.getElementById('btn-confirm-archive').addEventListener('click', handleConfirmArchive);
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && state.activeTask) {
-      updateTimerDisplay();
+    if (!document.hidden) resume();
+  });
+  window.addEventListener('online', () => syncArchive());
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY && screens.archive.classList.contains('active')) {
+      state = loadState();
+      renderArchive();
     }
   });
+}
+
+// Coming back to the app: the stored state is the truth, never this window's memory of it.
+function resume() {
+  state = loadState();
+  const onArchive = screens.archive.classList.contains('active');
+  const editing = screens.checkin.classList.contains('active') || screens.closing.classList.contains('active');
+  if (!editing || !state.activeTask) {
+    if (state.activeTask) {
+      if (Date.now() >= state.activeTask.currentBlockEnd) triggerCheckin();
+      else { showScreen('running'); startTimerLoop(); }
+    } else if (onArchive) {
+      renderArchive();
+    } else {
+      stopTimerLoop();
+      showScreen('dashboard');
+    }
+  }
+  syncArchive();
 }
 
 function registerServiceWorker() {
@@ -300,7 +408,9 @@ function registerServiceWorker() {
 
 function init() {
   registerServiceWorker();
+  requestPersistentStorage();
   wireEvents();
+  syncArchive();
 
   if (state.activeTask) {
     const now = Date.now();
