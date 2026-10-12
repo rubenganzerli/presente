@@ -1,7 +1,8 @@
 // Bump VERSION on every release: the old shell cache is dropped on activate.
-const VERSION = 'presente-v3';
+const VERSION = 'presente-v4';
 const SHELL = ['./', './index.html', './style.css', './app.js', './manifest.json', './icon.svg',
-  './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
+  './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
+  './favicon.ico', './favicon-32.png'];
 
 // The auth gate answers with its login page (200) or 401; neither may ever be cached as the app.
 const cacheable = (res) => res && res.ok && res.type !== 'opaqueredirect' && !res.headers.get('X-Presente-Gate');
