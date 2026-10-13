@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Presente",
   "short_name": "Presente",
-  "description": "Un blocco alla volta. Traccia i tuoi task in intervalli da 15 minuti, con check-in automatico e archivio.",
+  "description": "Un blocco alla volta. Dai un nome al task, scegli la durata del timer, fai check-in a ogni blocco e ritrova tutto in archivio.",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
@@ -28,6 +28,15 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "icon-monochrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
     }
+  ],
+  "categories": [
+    "productivity"
   ]
 }

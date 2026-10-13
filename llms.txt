@@ -1,0 +1,9 @@
+# Presente
+
+> Presente è una web app (PWA, installabile su Android, iOS, Windows e macOS) per lavorare un blocco alla volta: dai un nome al task, scegli la durata del timer (15 minuti di default), fai check-in alla fine di ogni blocco e ritrova i task completati in archivio, sincronizzato sul tuo account.
+
+- Indirizzo: https://presente.rubenganzerli.com/
+- Accesso: iscrizione gratuita con email e password (include la newsletter di Ruben Ganzerli).
+- Lingua: italiano.
+- Autore: Ruben Ganzerli — https://rubenganzerli.com/
+- Icona: https://presente.rubenganzerli.com/icon-512.png (anello scuro con un arco oro da ore 12 a ore 3)

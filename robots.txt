@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /$
+Allow: /og-image.png
+Allow: /icon-512.png
+Allow: /llms.txt
+Disallow: /__auth/
+Disallow: /__api/
