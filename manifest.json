@@ -38,5 +38,21 @@
   ],
   "categories": [
     "productivity"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-dashboard.png",
+      "sizes": "750x1624",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Inizia un task"
+    },
+    {
+      "src": "screenshot-timer.png",
+      "sizes": "750x1624",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Il timer, un blocco alla volta"
+    }
   ]
 }
