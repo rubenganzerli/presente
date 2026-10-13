@@ -511,6 +511,10 @@ function installSnoozed() {
 // Browsers without an install prompt still install the app: tell each one where its own button is.
 function manualInstallHint() {
   const ua = navigator.userAgent;
+  // In-app browsers (a link opened inside Instagram, Facebook, TikTok, the Google app) cannot install: send to the real browser first.
+  if (/Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|TikTok|Line\/|GSA\//.test(ua)) {
+    return 'Apri il menu <b>&#8943;</b> e scegli <b>Apri nel browser</b>, poi installa da lì.';
+  }
   const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (iOS) return `Tocca ${SHARE_ICON} <b>Condividi</b>, poi <b>Aggiungi alla schermata Home</b>.`;
   if (/Android/.test(ua)) {
