@@ -1,6 +1,5 @@
 const STORAGE_KEY = 'presenteData_v1';
 const BLOCK_DURATION_MS = 15 * 60 * 1000; // tasks started before durations were chosen
-const LAST_DURATION_KEY = 'presenteLastDurationMin';
 const MIN_DURATION_MIN = 1;
 const MAX_DURATION_MIN = 180;
 const RING_CIRCUMFERENCE = 2 * Math.PI * 90;
@@ -153,18 +152,9 @@ function blockMs(t) {
   return t.blockDurationMs || BLOCK_DURATION_MS;
 }
 
-function lastDurationMin() {
-  try {
-    const n = Number(localStorage.getItem(LAST_DURATION_KEY));
-    if (Number.isInteger(n) && n >= MIN_DURATION_MIN && n <= MAX_DURATION_MIN) return n;
-  } catch (e) {}
-  return BLOCK_DURATION_MS / 60000;
-}
-
 function startTask(title, minutes) {
   const now = Date.now();
   const durationMs = minutes * 60000;
-  try { localStorage.setItem(LAST_DURATION_KEY, String(minutes)); } catch (e) {}
   state.activeTask = {
     id: 'task_' + now,
     title: title || 'Task senza titolo',
@@ -319,14 +309,7 @@ function disarmFinish() {
   btn.innerHTML = 'Ho finito &middot; chiudi il timer';
 }
 
-/* ---------- Duration picker ---------- */
-
-function setDuration(min) {
-  document.getElementById('input-duration').value = String(min);
-  document.querySelectorAll('.duration-chip').forEach((c) => {
-    c.classList.toggle('selected', Number(c.dataset.min) === min);
-  });
-}
+/* ---------- Duration step ---------- */
 
 function showQuickstartStep(step) {
   document.getElementById('form-quickstart').classList.toggle('hidden', step !== 'title');
@@ -439,21 +422,12 @@ function wireEvents() {
     e.preventDefault();
     const title = document.getElementById('input-task-title').value.trim();
     document.getElementById('duration-task-title').textContent = title || 'Task senza titolo';
-    setDuration(lastDurationMin());
+    document.getElementById('input-duration').value = String(BLOCK_DURATION_MS / 60000);
     showQuickstartStep('duration');
   });
 
-  document.getElementById('duration-presets').addEventListener('click', (e) => {
-    const chip = e.target.closest('.duration-chip');
-    if (chip) setDuration(Number(chip.dataset.min));
-  });
-
-  document.getElementById('input-duration').addEventListener('input', (e) => {
-    const min = Number(e.target.value);
-    document.querySelectorAll('.duration-chip').forEach((c) => {
-      c.classList.toggle('selected', Number(c.dataset.min) === min);
-    });
-  });
+  // One tap selects the 15, so typing replaces it.
+  document.getElementById('input-duration').addEventListener('focus', (e) => e.target.select());
 
   document.getElementById('btn-back-duration').addEventListener('click', () => showQuickstartStep('title'));
 

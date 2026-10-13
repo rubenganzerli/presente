@@ -142,18 +142,6 @@ html, body {
 .quickstart-box.hidden { display: none; }
 
 .duration-task { color: var(--text-dim); font-size: 14px; margin-top: -8px; overflow-wrap: anywhere; }
-.duration-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.duration-chip {
-  padding: 12px 0;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 15px;
-  cursor: pointer;
-}
-.duration-chip.selected { border-color: var(--gold); color: var(--gold); }
 .duration-input { display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 14px; }
 .duration-input input { width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
 
