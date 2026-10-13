@@ -1,5 +1,8 @@
 const STORAGE_KEY = 'presenteData_v1';
-const BLOCK_DURATION_MS = 15 * 60 * 1000;
+const BLOCK_DURATION_MS = 15 * 60 * 1000; // tasks started before durations were chosen
+const LAST_DURATION_KEY = 'presenteLastDurationMin';
+const MIN_DURATION_MIN = 1;
+const MAX_DURATION_MIN = 180;
 const RING_CIRCUMFERENCE = 2 * Math.PI * 90;
 
 let state = loadState();
@@ -146,15 +149,30 @@ function vibrate() {
 
 /* ---------- Task lifecycle ---------- */
 
-function startTask(title) {
+function blockMs(t) {
+  return t.blockDurationMs || BLOCK_DURATION_MS;
+}
+
+function lastDurationMin() {
+  try {
+    const n = Number(localStorage.getItem(LAST_DURATION_KEY));
+    if (Number.isInteger(n) && n >= MIN_DURATION_MIN && n <= MAX_DURATION_MIN) return n;
+  } catch (e) {}
+  return BLOCK_DURATION_MS / 60000;
+}
+
+function startTask(title, minutes) {
   const now = Date.now();
+  const durationMs = minutes * 60000;
+  try { localStorage.setItem(LAST_DURATION_KEY, String(minutes)); } catch (e) {}
   state.activeTask = {
     id: 'task_' + now,
     title: title || 'Task senza titolo',
     startedAt: now,
     blocks: [],
+    blockDurationMs: durationMs,
     currentBlockStart: now,
-    currentBlockEnd: now + BLOCK_DURATION_MS,
+    currentBlockEnd: now + durationMs,
   };
   saveState();
   showScreen('running');
@@ -186,22 +204,33 @@ function updateTimerDisplay() {
     return;
   }
 
-  const mins = Math.floor(remaining / 60000);
-  const secs = Math.floor((remaining % 60000) / 1000);
-  document.getElementById('timer-digital').textContent =
-    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const totalSecs = Math.ceil(remaining / 1000);
+  const hrs = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  const mmss = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  document.getElementById('timer-digital').textContent = hrs ? `${hrs}:${mmss}` : mmss;
   document.getElementById('running-task-title').textContent = t.title;
   document.getElementById('block-counter').textContent = `Blocco ${t.blocks.length + 1}`;
 
-  const fraction = 1 - remaining / BLOCK_DURATION_MS;
+  const fraction = 1 - remaining / (t.currentBlockEnd - t.currentBlockStart);
   const ring = document.getElementById('ring-progress');
   ring.style.strokeDasharray = RING_CIRCUMFERENCE;
   ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - fraction);
 }
 
 function triggerCheckin() {
-  playChime();
-  vibrate();
+  const t = state.activeTask;
+  if (t && !t.endedEarly) {
+    playChime();
+    vibrate();
+  }
+  const mins = t ? Math.max(1, Math.round((t.currentBlockEnd - t.currentBlockStart) / 60000)) : 0;
+  document.getElementById('checkin-question').textContent = t && t.endedEarly
+    ? `Chiuso prima (${mins} min). Cosa hai fatto? Perché? Come?`
+    : `Cosa hai fatto in questi ${mins} min? Perché? Come?`;
+  // Ended early means the task is done: only the close path is offered.
+  document.getElementById('btn-avanti').classList.toggle('hidden', !!(t && t.endedEarly));
   document.getElementById('checkin-note').value = '';
   showScreen('checkin');
   setTimeout(() => document.getElementById('checkin-note').focus(), 50);
@@ -218,7 +247,7 @@ function handleAvanti() {
   });
   const now = Date.now();
   t.currentBlockStart = now;
-  t.currentBlockEnd = now + BLOCK_DURATION_MS;
+  t.currentBlockEnd = now + blockMs(t);
   saveState();
   showScreen('running');
   startTimerLoop();
@@ -250,6 +279,8 @@ function handleConfirmArchive() {
     startedAt: t.startedAt,
     endedAt: now,
     blocks: t.blocks,
+    blockDurationMs: blockMs(t),
+    endedEarly: !!t.endedEarly,
     finalNote,
     completed: true,
   };
@@ -258,6 +289,50 @@ function handleConfirmArchive() {
   saveState();
   showScreen('dashboard');
   syncArchive();
+}
+
+// Two taps, so a stray touch never ends the block: the first arms the button for 3 s.
+let finishArmTimer = null;
+
+function handleFinishEarly() {
+  const t = state.activeTask;
+  const btn = document.getElementById('btn-finish-early');
+  if (!t) return;
+  if (!btn.classList.contains('armed')) {
+    btn.classList.add('armed');
+    btn.textContent = 'Tocca di nuovo per chiudere';
+    finishArmTimer = setTimeout(disarmFinish, 3000);
+    return;
+  }
+  disarmFinish();
+  stopTimerLoop();
+  t.currentBlockEnd = Math.min(Date.now(), t.currentBlockEnd);
+  t.endedEarly = true;
+  saveState();
+  triggerCheckin();
+}
+
+function disarmFinish() {
+  clearTimeout(finishArmTimer);
+  const btn = document.getElementById('btn-finish-early');
+  btn.classList.remove('armed');
+  btn.innerHTML = 'Ho finito &middot; chiudi il timer';
+}
+
+/* ---------- Duration picker ---------- */
+
+function setDuration(min) {
+  document.getElementById('input-duration').value = String(min);
+  document.querySelectorAll('.duration-chip').forEach((c) => {
+    c.classList.toggle('selected', Number(c.dataset.min) === min);
+  });
+}
+
+function showQuickstartStep(step) {
+  document.getElementById('form-quickstart').classList.toggle('hidden', step !== 'title');
+  document.getElementById('form-duration').classList.toggle('hidden', step !== 'duration');
+  const focusId = step === 'title' ? 'input-task-title' : 'input-duration';
+  setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
 /* ---------- Archive ---------- */
@@ -352,19 +427,49 @@ function wireEvents() {
   document.getElementById('btn-start-task').addEventListener('click', () => {
     document.getElementById('input-task-title').value = '';
     document.getElementById('overlay-quickstart').classList.remove('hidden');
-    setTimeout(() => document.getElementById('input-task-title').focus(), 50);
+    showQuickstartStep('title');
   });
 
   document.getElementById('btn-cancel-quickstart').addEventListener('click', () => {
     document.getElementById('overlay-quickstart').classList.add('hidden');
   });
 
+  // Step 1: name the task, Enter. Step 2: choose how long the timer runs.
   document.getElementById('form-quickstart').addEventListener('submit', (e) => {
     e.preventDefault();
     const title = document.getElementById('input-task-title').value.trim();
-    document.getElementById('overlay-quickstart').classList.add('hidden');
-    startTask(title);
+    document.getElementById('duration-task-title').textContent = title || 'Task senza titolo';
+    setDuration(lastDurationMin());
+    showQuickstartStep('duration');
   });
+
+  document.getElementById('duration-presets').addEventListener('click', (e) => {
+    const chip = e.target.closest('.duration-chip');
+    if (chip) setDuration(Number(chip.dataset.min));
+  });
+
+  document.getElementById('input-duration').addEventListener('input', (e) => {
+    const min = Number(e.target.value);
+    document.querySelectorAll('.duration-chip').forEach((c) => {
+      c.classList.toggle('selected', Number(c.dataset.min) === min);
+    });
+  });
+
+  document.getElementById('btn-back-duration').addEventListener('click', () => showQuickstartStep('title'));
+
+  document.getElementById('form-duration').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const minutes = Number(document.getElementById('input-duration').value);
+    if (!Number.isInteger(minutes) || minutes < MIN_DURATION_MIN || minutes > MAX_DURATION_MIN) {
+      document.getElementById('input-duration').reportValidity();
+      return;
+    }
+    const title = document.getElementById('input-task-title').value.trim();
+    document.getElementById('overlay-quickstart').classList.add('hidden');
+    startTask(title, minutes);
+  });
+
+  document.getElementById('btn-finish-early').addEventListener('click', handleFinishEarly);
 
   document.getElementById('btn-archive').addEventListener('click', () => {
     state = loadState();

@@ -139,6 +139,38 @@ html, body {
 .quickstart-box input:focus { outline: none; border-color: var(--gold-dim); }
 
 .quickstart-actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
+.quickstart-box.hidden { display: none; }
+
+.duration-task { color: var(--text-dim); font-size: 14px; margin-top: -8px; overflow-wrap: anywhere; }
+.duration-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.duration-chip {
+  padding: 12px 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  cursor: pointer;
+}
+.duration-chip.selected { border-color: var(--gold); color: var(--gold); }
+.duration-input { display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 14px; }
+.duration-input input { width: 110px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.btn-finish {
+  align-self: center;
+  margin-bottom: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  padding: 14px 22px;
+  cursor: pointer;
+}
+.btn-finish.armed { border-color: var(--gold); color: var(--gold); }
 
 .btn-text {
   background: none;
@@ -209,7 +241,7 @@ html, body {
 .block-counter {
   text-align: center;
   color: var(--text-dim);
-  padding-bottom: 32px;
+  padding-bottom: 20px;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -371,3 +403,5 @@ html, body {
   line-height: 1;
   cursor: pointer;
 }
+
+.checkin-actions .hidden { display: none; }

@@ -35,9 +35,28 @@
     <div id="overlay-quickstart" class="overlay hidden">
       <form id="form-quickstart" class="quickstart-box">
         <label for="input-task-title">Cosa stai per fare?</label>
-        <input id="input-task-title" type="text" autocomplete="off" placeholder="Es. Scrivere il report" />
+        <input id="input-task-title" type="text" autocomplete="off" placeholder="Es. Scrivere il report" enterkeyhint="next" />
         <div class="quickstart-actions">
           <button type="button" id="btn-cancel-quickstart" class="btn-text">Annulla</button>
+          <button type="submit" class="btn-accent">Avanti</button>
+        </div>
+      </form>
+      <form id="form-duration" class="quickstart-box hidden">
+        <label for="input-duration">Quanto dura il timer?</label>
+        <div class="duration-task" id="duration-task-title"></div>
+        <div class="duration-presets" id="duration-presets">
+          <button type="button" class="duration-chip" data-min="5">5'</button>
+          <button type="button" class="duration-chip" data-min="15">15'</button>
+          <button type="button" class="duration-chip" data-min="25">25'</button>
+          <button type="button" class="duration-chip" data-min="45">45'</button>
+          <button type="button" class="duration-chip" data-min="60">60'</button>
+        </div>
+        <div class="duration-input">
+          <input id="input-duration" type="number" inputmode="numeric" min="1" max="180" step="1" required enterkeyhint="go" />
+          <span>minuti</span>
+        </div>
+        <div class="quickstart-actions">
+          <button type="button" id="btn-back-duration" class="btn-text">Indietro</button>
           <button type="submit" class="btn-accent">Vai</button>
         </div>
       </form>
@@ -56,13 +75,14 @@
         <div class="timer-digital" id="timer-digital">15:00</div>
       </div>
       <div class="block-counter" id="block-counter">Blocco 1</div>
+      <button id="btn-finish-early" class="btn-finish">Ho finito &middot; chiudi il timer</button>
     </section>
 
     <!-- CHECK-IN -->
     <section id="screen-checkin" class="screen">
       <div class="checkin-box">
         <h2>Check-in</h2>
-        <p class="checkin-question">Cosa hai fatto in questi 15 min? Perché? Come?</p>
+        <p class="checkin-question" id="checkin-question">Cosa hai fatto in questo blocco? Perché? Come?</p>
         <textarea id="checkin-note" rows="6" placeholder="Scrivi qui..."></textarea>
         <div class="checkin-actions">
           <button id="btn-avanti" class="btn-primary">Avanti</button>
@@ -101,7 +121,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-blocks">0</div>
-          <div class="stat-label">Blocchi da 15'</div>
+          <div class="stat-label">Blocchi oggi</div>
         </div>
       </div>
       <div class="sync-status" id="sync-status"></div>
