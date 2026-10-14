@@ -341,6 +341,19 @@ html, body {
 
 .final-note { font-size: 14px; color: var(--text-dim); padding-top: 4px; white-space: pre-wrap; }
 .final-note strong { color: var(--text); }
+.btn-delete {
+  align-self: flex-end;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.btn-delete.armed { border-color: #d98a7a; color: #d98a7a; }
 
 .empty-state { text-align: center; color: var(--text-dim); padding: 40px 20px; font-family: var(--serif); font-style: italic; font-size: 18px; }
 

@@ -1,5 +1,5 @@
 // Bump VERSION on every release: the old shell cache is dropped on activate.
-const VERSION = 'presente-v9';
+const VERSION = 'presente-v10';
 const SHELL = ['./', './index.html', './style.css', './app.js', './install.js', './manifest.json', './icon.svg',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
   './favicon.ico', './favicon-32.png'];

@@ -91,8 +91,27 @@
     }
   }
 
+  // An installed app opens on the cached shell, so a release would land only on the open after.
+  // When a new worker takes over, reload once into it - unless a note is being written.
+  function watchForUpdate() {
+    if (!navigator.serviceWorker.controller) return; // first install: nothing old to replace
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const writing = ['screen-checkin', 'screen-closing'].some((id) => {
+        const s = document.getElementById(id);
+        return s && s.classList.contains('active');
+      });
+      if (reloaded || writing) return;
+      reloaded = true;
+      location.reload();
+    });
+  }
+
   function setup() {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      watchForUpdate();
+    }
     if (isStandalone()) return;
     mount();
     if (installPrompt) show();
