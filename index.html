@@ -101,7 +101,8 @@
       <div class="archive-header">
         <button id="btn-back-dashboard" class="btn-back">&larr; Indietro</button>
         <h2>Archivio</h2>
-        <button id="btn-export" class="btn-back btn-export">Esporta</button>
+        <button id="btn-select" class="btn-back btn-export">Seleziona</button>
+        <button id="btn-export" class="btn-back">Esporta</button>
       </div>
       <div class="stats-row">
         <div class="stat-card">
@@ -119,6 +120,11 @@
       </div>
       <div class="sync-status" id="sync-status"></div>
       <div class="task-list" id="task-list"></div>
+      <div class="select-bar hidden" id="select-bar">
+        <span id="select-count">0 selezionati</span>
+        <button id="btn-select-all" class="btn-back">Seleziona tutto</button>
+        <button id="btn-delete-selected" class="btn-delete" disabled>Elimina</button>
+      </div>
     </section>
 
   </div>
