@@ -22,6 +22,20 @@ function loadState() {
   return readStored();
 }
 
+// A deleted task stays in the set as a tombstone: newer than the task, so every merge
+// (this window, other devices, the server) drops the task instead of bringing it back.
+const live = (tasks) => tasks.filter((t) => !t.deleted);
+
+function deleteTask(id) {
+  const t = state.tasks.find((x) => x.id === id);
+  if (!t) return;
+  const tomb = { id, startedAt: t.startedAt, endedAt: t.endedAt, blocks: [], deleted: true, updatedAt: Date.now() };
+  state.tasks = state.tasks.map((x) => (x.id === id ? tomb : x));
+  saveState();
+  renderArchive();
+  syncArchive();
+}
+
 // Finished tasks are a set keyed by id: merging never drops one, whoever wrote last.
 function mergeTasks(a, b) {
   const stamp = (t) => t.updatedAt || t.endedAt || 0;
@@ -321,10 +335,11 @@ function showQuickstartStep(step) {
 /* ---------- Archive ---------- */
 
 function renderArchive() {
-  const todayTasks = state.tasks.filter(t => isToday(t.startedAt) || isToday(t.endedAt));
+  const tasks = live(state.tasks);
+  const todayTasks = tasks.filter(t => isToday(t.startedAt) || isToday(t.endedAt));
   let totalMs = 0;
   let totalBlocks = 0;
-  state.tasks.forEach(t => {
+  tasks.forEach(t => {
     t.blocks.forEach(b => {
       if (isToday(b.startedAt)) {
         totalMs += b.endedAt - b.startedAt;
@@ -342,13 +357,13 @@ function renderArchive() {
   const listEl = document.getElementById('task-list');
   listEl.innerHTML = '';
 
-  if (state.tasks.length === 0) {
+  if (tasks.length === 0) {
     listEl.innerHTML = '<div class="empty-state">Nessun task ancora. Inizia il primo!</div>';
     return;
   }
 
   let lastDay = '';
-  state.tasks.forEach(t => {
+  tasks.forEach(t => {
     const day = formatDay(t.endedAt);
     if (day !== lastDay) {
       lastDay = day;
@@ -380,7 +395,22 @@ function renderArchive() {
         </div>
       `).join('')}
       ${t.finalNote ? `<div class="final-note"><strong>Note finali:</strong> ${escapeHtml(t.finalNote)}</div>` : ''}
+      <button class="btn-delete">Elimina</button>
     `;
+
+    // Two taps, like closing a timer early: the first arms the button for 3 s.
+    const del = detail.querySelector('.btn-delete');
+    let disarm = null;
+    del.addEventListener('click', () => {
+      if (!del.classList.contains('armed')) {
+        del.classList.add('armed');
+        del.textContent = 'Tocca di nuovo per eliminare';
+        disarm = setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Elimina'; }, 3000);
+        return;
+      }
+      clearTimeout(disarm);
+      deleteTask(t.id);
+    });
 
     header.addEventListener('click', () => {
       detail.classList.toggle('hidden');
@@ -394,7 +424,7 @@ function renderArchive() {
 
 // A copy the user holds, outside the browser and outside the account.
 function exportArchive() {
-  const data = JSON.stringify({ exportedAt: new Date().toISOString(), tasks: readStored().tasks }, null, 2);
+  const data = JSON.stringify({ exportedAt: new Date().toISOString(), tasks: live(readStored().tasks) }, null, 2);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
   a.download = 'presente-archivio-' + new Date().toISOString().slice(0, 10) + '.json';
