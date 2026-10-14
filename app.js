@@ -26,14 +26,57 @@ function loadState() {
 // (this window, other devices, the server) drops the task instead of bringing it back.
 const live = (tasks) => tasks.filter((t) => !t.deleted);
 
-function deleteTask(id) {
-  const t = state.tasks.find((x) => x.id === id);
-  if (!t) return;
-  const tomb = { id, startedAt: t.startedAt, endedAt: t.endedAt, blocks: [], deleted: true, updatedAt: Date.now() };
-  state.tasks = state.tasks.map((x) => (x.id === id ? tomb : x));
+function deleteTasks(ids) {
+  const gone = new Set(ids);
+  const now = Date.now();
+  state.tasks = state.tasks.map((t) => (gone.has(t.id) && !t.deleted
+    ? { id: t.id, startedAt: t.startedAt, endedAt: t.endedAt, blocks: [], deleted: true, updatedAt: now }
+    : t));
   saveState();
   renderArchive();
   syncArchive();
+}
+
+// Destructive buttons take two taps: the first arms the button for 3 s and says what the second does.
+function armable(btn, armedLabel, onConfirm) {
+  const label = btn.innerHTML;
+  let timer = null;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (btn.disabled) return;
+    if (!btn.classList.contains('armed')) {
+      btn.classList.add('armed');
+      btn.textContent = typeof armedLabel === 'function' ? armedLabel() : armedLabel;
+      timer = setTimeout(() => { btn.classList.remove('armed'); btn.innerHTML = label; }, 3000);
+      return;
+    }
+    clearTimeout(timer);
+    btn.classList.remove('armed');
+    btn.innerHTML = label;
+    onConfirm();
+  });
+}
+
+/* ---------- Selection (archive) ---------- */
+
+let selecting = false;
+const selected = new Set();
+
+function setSelecting(on) {
+  selecting = on;
+  selected.clear();
+  renderArchive();
+}
+
+function updateSelectionBar() {
+  const tasks = live(state.tasks);
+  const n = selected.size;
+  document.getElementById('select-count').textContent = n === 1 ? '1 selezionato' : n + ' selezionati';
+  const all = tasks.length > 0 && tasks.every((t) => selected.has(t.id));
+  document.getElementById('btn-select-all').textContent = all ? 'Deseleziona tutto' : 'Seleziona tutto';
+  const del = document.getElementById('btn-delete-selected');
+  del.disabled = n === 0;
+  if (!del.classList.contains('armed')) del.textContent = 'Elimina';
 }
 
 // Finished tasks are a set keyed by id: merging never drops one, whoever wrote last.
@@ -356,6 +399,12 @@ function renderArchive() {
 
   const listEl = document.getElementById('task-list');
   listEl.innerHTML = '';
+  listEl.classList.toggle('selecting', selecting);
+  document.getElementById('select-bar').classList.toggle('hidden', !selecting);
+  document.getElementById('btn-select').textContent = selecting ? 'Fine' : 'Seleziona';
+  document.getElementById('btn-select').classList.toggle('hidden', tasks.length === 0 && !selecting);
+  [...selected].forEach((id) => { if (!tasks.some((t) => t.id === id)) selected.delete(id); });
+  updateSelectionBar();
 
   if (tasks.length === 0) {
     listEl.innerHTML = '<div class="empty-state">Nessun task ancora. Inizia il primo!</div>';
@@ -372,17 +421,20 @@ function renderArchive() {
       h.textContent = day;
       listEl.appendChild(h);
     }
-    const durationMs = t.endedAt - t.startedAt;
-    const durMins = Math.round(durationMs / 60000);
+    const durMins = Math.round((t.endedAt - t.startedAt) / 60000);
 
     const card = document.createElement('div');
-    card.className = 'task-card';
+    card.className = 'task-card' + (selected.has(t.id) ? ' selected' : '');
 
     const header = document.createElement('div');
     header.className = 'task-card-header';
     header.innerHTML = `
-      <div class="task-card-title">${escapeHtml(t.title)}</div>
-      <div class="task-card-meta">${formatTime(t.startedAt)} &rarr; ${formatTime(t.endedAt)} &middot; ${durMins} min</div>
+      <span class="task-check" aria-hidden="true"></span>
+      <div class="task-card-main">
+        <div class="task-card-title">${escapeHtml(t.title)}</div>
+        <div class="task-card-meta">${formatTime(t.startedAt)} &rarr; ${formatTime(t.endedAt)} &middot; ${durMins} min</div>
+      </div>
+      <button class="btn-x" aria-label="Elimina task">&times;</button>
     `;
 
     const detail = document.createElement('div');
@@ -395,25 +447,20 @@ function renderArchive() {
         </div>
       `).join('')}
       ${t.finalNote ? `<div class="final-note"><strong>Note finali:</strong> ${escapeHtml(t.finalNote)}</div>` : ''}
-      <button class="btn-delete">Elimina</button>
     `;
 
-    // Two taps, like closing a timer early: the first arms the button for 3 s.
-    const del = detail.querySelector('.btn-delete');
-    let disarm = null;
-    del.addEventListener('click', () => {
-      if (!del.classList.contains('armed')) {
-        del.classList.add('armed');
-        del.textContent = 'Tocca di nuovo per eliminare';
-        disarm = setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Elimina'; }, 3000);
+    armable(header.querySelector('.btn-x'), 'Elimina?', () => deleteTasks([t.id]));
+
+    // Tap the card: open or close it. While selecting, the tap picks it instead.
+    header.addEventListener('click', () => {
+      if (selecting) {
+        if (selected.has(t.id)) selected.delete(t.id); else selected.add(t.id);
+        card.classList.toggle('selected', selected.has(t.id));
+        updateSelectionBar();
         return;
       }
-      clearTimeout(disarm);
-      deleteTask(t.id);
-    });
-
-    header.addEventListener('click', () => {
       detail.classList.toggle('hidden');
+      card.classList.toggle('open', !detail.classList.contains('hidden'));
     });
 
     card.appendChild(header);
@@ -485,8 +532,22 @@ function wireEvents() {
   document.getElementById('btn-export').addEventListener('click', exportArchive);
 
   document.getElementById('btn-back-dashboard').addEventListener('click', () => {
+    selecting = false;
+    selected.clear();
     showScreen('dashboard');
   });
+
+  document.getElementById('btn-select').addEventListener('click', () => setSelecting(!selecting));
+  document.getElementById('btn-select-all').addEventListener('click', () => {
+    const tasks = live(state.tasks);
+    const all = tasks.every((t) => selected.has(t.id));
+    selected.clear();
+    if (!all) tasks.forEach((t) => selected.add(t.id));
+    renderArchive();
+  });
+  armable(document.getElementById('btn-delete-selected'),
+    () => (selected.size === 1 ? 'Elimina 1 task?' : 'Elimina ' + selected.size + ' task?'),
+    () => { const ids = [...selected]; selecting = false; selected.clear(); deleteTasks(ids); });
 
   document.getElementById('btn-avanti').addEventListener('click', handleAvanti);
   document.getElementById('btn-obiettivo').addEventListener('click', handleObiettivo);
