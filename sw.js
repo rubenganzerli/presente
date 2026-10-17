@@ -1,6 +1,8 @@
-// Bump VERSION on every release: the old shell cache is dropped on activate.
-const VERSION = 'presente-v11';
-const SHELL = ['./', './index.html', './style.css', './app.js', './install.js', './manifest.json', './icon.svg',
+// Bump VERSION on every release, and the ?v= on the shell assets in index.html to match: the old
+// shell cache is dropped on activate, and the old worker, still in charge on the first open after a
+// release, finds no cached copy of the new asset URLs, so new HTML never runs with old JS and CSS.
+const VERSION = 'presente-v12';
+const SHELL = ['./', './index.html', './style.css?v=12', './app.js?v=12', './install.js?v=12', './manifest.json', './icon.svg',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
   './favicon.ico', './favicon-32.png'];
 
